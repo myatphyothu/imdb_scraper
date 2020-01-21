@@ -1,8 +1,12 @@
 import os,sys
+import pandas as pd
 from requests import get
 from bs4 import BeautifulSoup
 
 MAIN_URL = 'http://www.imdb.com/search/title?release_date=2017&sort=num_votes,desc&page=1'
+
+
+MOVIES_LIST = []
 
 #--------------------------------------------------------------------------------------
 def get_elem(parent, find_elem, elem_type, elem_name):
@@ -52,8 +56,19 @@ def get_votes_and_gross(movie_container):
             gross = spans[1].text
     return votes,gross
 #--------------------------------------------------------------------------------------
+def display():
+    global MOVIES_LIST
+    test_df = pd.DataFrame({'movie': [x["name"] for x in MOVIES_LIST],
+        'year': [x["year"] for x in MOVIES_LIST],
+        'rating': [x["rating"] for x in MOVIES_LIST],
+        'metascore': [x["metascore"] for x in MOVIES_LIST],
+        'votes': [x["votes"] for x in MOVIES_LIST],
+        'gross': [x["gross"] for x in MOVIES_LIST]
+        })
+    print(test_df[['movie', 'year', 'rating', 'metascore', 'votes', 'gross']])
 
 def main(args):
+    global MOVIES_LIST
     page_response = get(MAIN_URL)
     html_soup = BeautifulSoup(page_response.text, "html.parser")
     movie_containers = html_soup.find_all("div", class_="lister-item mode-advanced")
@@ -65,7 +80,12 @@ def main(args):
             metascore = get_metascore(movie_container)
             rating = get_rating(movie_container)
             votes,gross = get_votes_and_gross(movie_container)
-            print("%-50s %-15s Rating: %-5s Metascore: %-5s Votes: %-10s Gross: %-8s" % (name,year,rating,metascore, votes, gross))
+            MOVIES_LIST.append({"name":name,"year":year,"metascore":metascore,"rating":rating,"votes":votes,"gross":gross})
+            #print("%-50s %-15s Rating: %-5s Metascore: %-5s Votes: %-10s Gross: %-8s" % (name,year,rating,metascore, votes, gross))
+        
+        #X = [x["gross"] for x in MOVIES_LIST]
+        #print("\n".join(X))
+        display()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
