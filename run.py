@@ -1,10 +1,14 @@
 import os,sys
+from time import sleep, time
+from random import randint
 import pandas as pd
 from requests import get
 from bs4 import BeautifulSoup
+from IPython.core.display import clear_output
+from warnings import warn
 
-MAIN_URL = 'http://www.imdb.com/search/title?release_date=2017&sort=num_votes,desc&page=1'
-
+MAIN_URL = 'http://www.imdb.com/search/title?release_date='
+HEADERS = {"Accept-Language": "en-US, en;q=0.5"}
 
 MOVIES_LIST = []
 
@@ -13,13 +17,11 @@ def get_elem(parent, find_elem, elem_type, elem_name):
     if parent is None:
         return None
     elem = None
-    
     try:
         if elem_type == "class":
             elem = parent.find(find_elem, class_=elem_name)
     except:
         elem = None
-    
     return elem
 #--------------------------------------------------------------------------------------
 
@@ -66,26 +68,57 @@ def display():
         'gross': [x["gross"] for x in MOVIES_LIST]
         })
     print(test_df[['movie', 'year', 'rating', 'metascore', 'votes', 'gross']])
+#--------------------------------------------------------------------------------------
+
+
+
 
 def main(args):
-    global MOVIES_LIST
-    page_response = get(MAIN_URL)
-    html_soup = BeautifulSoup(page_response.text, "html.parser")
-    movie_containers = html_soup.find_all("div", class_="lister-item mode-advanced")
+    global MOVIES_LIST,HEADERS,MAIN_URL
+    pages = [str(i) for i in range(1,5)]
+    years_url = [str(i) for i in range(2000,2018)]  
+    start_time = time()
+    requests, expected_requests = 0, 72
+    for year_url in years_url:
+        for page in pages:
+            response = get(MAIN_URL + year_url + "&sort=num_votes,desc&page=" + page, headers=HEADERS)
 
-    if len(movie_containers) > 0:
-        for movie_container in movie_containers:
-            name = movie_container.h3.a.text
-            year = get_year(movie_container)
-            metascore = get_metascore(movie_container)
-            rating = get_rating(movie_container)
-            votes,gross = get_votes_and_gross(movie_container)
-            MOVIES_LIST.append({"name":name,"year":year,"metascore":metascore,"rating":rating,"votes":votes,"gross":gross})
-            #print("%-50s %-15s Rating: %-5s Metascore: %-5s Votes: %-10s Gross: %-8s" % (name,year,rating,metascore, votes, gross))
-        
-        #X = [x["gross"] for x in MOVIES_LIST]
-        #print("\n".join(X))
-        display()
+            #pause the loop to avoid getting the IP banned
+            sleep(randint(8,15))
+
+            requests += 1
+            elapsed_time = time() - start_time
+            print("request:{}; frequency:{} req/s".format(requests, requests/elapsed_time))
+            clear_output(wait = True)
+
+            # warning for non-200 status codes
+            if response.status_code != 200:
+                warn("request:{}; status_code: {]}".format(requests, response.status_code))
+
+            if requests > expected_requests:
+                warn("Number of requests greater than expected")
+                break
+
+            page_html = BeautifulSoup(response.text, "html.parser")
+
+            # select all 50 movie containers from a single page
+            movie_containers = page_html.find_all("div", class_="lister-item mode-advanced")
+
+            # terminate loop if #requests > expected
+
+    
+
+            if len(movie_containers) > 0:
+                for movie_container in movie_containers:
+                    name = movie_container.h3.a.text
+                    year = get_year(movie_container)
+                    metascore = get_metascore(movie_container)
+                    rating = get_rating(movie_container)
+                    votes,gross = get_votes_and_gross(movie_container)
+                    MOVIES_LIST.append({"name":name,"year":year,"metascore":metascore,"rating":rating,"votes":votes,"gross":gross})
+                
+    print("scraping completed....")
+    display()       
 
 if __name__ == "__main__":
     main(sys.argv[1:])
