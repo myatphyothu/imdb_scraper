@@ -4,29 +4,7 @@ from natsort import natsorted
 
 #^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*
 Movie = collections.namedtuple("Movie", ["name", "year", "rating", "votes", "gross", "metascore"])
-# class Movie(object):
 
-#     def __init__ (self, name, year, rating, votes, gross, metascore):
-#         self.name = name
-#         self.year = year
-#         self.rating = rating
-#         self.votes = votes
-#         self.gross = gross
-#         self.metascore = metascore
-
-#     def __getitem__ (self, key):
-#         if key == "name": return self.name
-#         elif key == "year": return self.year
-#         elif key == "rating": return self.rating
-#         elif key == "votes": return self.votes
-#         elif key == "gross": return self.gross
-#         elif key == "metascore": return self.metascore
-#         else: return None
-
-#     def __str__(self):
-#         dsp = "%s(%s),Rating:%s, Votes:%s, Metascore:%s, Gross:%s" % (self.name,self.year,self.rating,self.votes,self.metascore,self.gross)
-#         return dsp
-#^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*
 class MovieCollection(object):
 
     def __init__ (self):
@@ -51,11 +29,15 @@ class MovieCollection(object):
         else:
             collection[attr_map[key]] = [movie.name,]
 
+    def exists(self, name):
+        if name in self.master_collection.keys():
+            return True
+        return False
 
     def add(self, movie):
-        if movie is None:
+        if movie is None or self.exists(movie.name):
             return
-
+        
         self.master_collection[movie.name] = movie
         for key in self.attr_keys:
             self.__add_to_collection(key, movie, self.particular_collections[key])

@@ -1,4 +1,4 @@
-import os,sys
+import os,sys,pickle
 from time import sleep, time
 from random import randint
 import pandas as pd
@@ -6,10 +6,12 @@ from requests import get
 from bs4 import BeautifulSoup
 from IPython.core.display import clear_output
 from warnings import warn
+from .movie_collection import *
 
 MAIN_URL = 'http://www.imdb.com/search/title?release_date='
 HEADERS = {"Accept-Language": "en-US, en;q=0.5"}
-
+PICKLE_FILE="imdb_scraper/movie_collection.pickle"
+MOVIE_COLLECTION = MovieCollection()
 MOVIES_LIST = []
 
 #--------------------------------------------------------------------------------------
@@ -60,6 +62,7 @@ def get_votes_and_gross(movie_container):
 #--------------------------------------------------------------------------------------
 def display():
     global MOVIES_LIST
+    print("%d new movies added..." % len(MOVIES_LIST))
     test_df = pd.DataFrame({'movie': [x["name"] for x in MOVIES_LIST],
         'year': [x["year"] for x in MOVIES_LIST],
         'rating': [x["rating"] for x in MOVIES_LIST],
@@ -69,14 +72,21 @@ def display():
         })
     print(test_df[['movie', 'year', 'rating', 'metascore', 'votes', 'gross']])
 #--------------------------------------------------------------------------------------
-
-
-def main(args):
-    global MOVIES_LIST,HEADERS,MAIN_URL
+def load_movie_collection():
+    global PICKLE_FILE,MOVIE_COLLECTION
+    if os.path.exists(PICKLE_FILE):
+        with open(PICKLE_FILE,"rb") as pickle_file:
+            MOVIE_COLLECTION = pickle.load(pickle_file)
+#--------------------------------------------------------------------------------------
+def scrape():
+    global MOVIES_LIST,MOVIE_COLLECTION,PICKLE_FILE, HEADERS,MAIN_URL
     pages = [str(i) for i in range(1,5)]
     years_url = [str(i) for i in range(2000,2018)]  
     start_time = time()
     requests, expected_requests = 0, 72
+
+    print("preparing to scrape...")
+
     for year_url in years_url:
         for page in pages:
             response = get(MAIN_URL + year_url + "&sort=num_votes,desc&page=" + page, headers=HEADERS)
@@ -108,14 +118,54 @@ def main(args):
             if len(movie_containers) > 0:
                 for movie_container in movie_containers:
                     name = movie_container.h3.a.text
+
+                    if MOVIE_COLLECTION.exists(name):
+                        continue
+
                     year = get_year(movie_container)
                     metascore = get_metascore(movie_container)
                     rating = get_rating(movie_container)
                     votes,gross = get_votes_and_gross(movie_container)
+                    
                     MOVIES_LIST.append({"name":name,"year":year,"metascore":metascore,"rating":rating,"votes":votes,"gross":gross})
                 
     sys.stdout.write("\nscraping completed....\n")
     display()       
+    for movie in MOVIES_LIST:
+        movie = Movie(**movie)
+        MOVIE_COLLECTION.add(movie)
+    
+    with open(PICKLE_FILE, "wb") as pickle_file:
+        pickle.dump(MOVIE_COLLECTION, pickle_file)
+    
+#--------------------------------------------------------------------------------------
+def display_movie_collection():
+    global MOVIE_COLLECTION
+    MOVIE_COLLECTION.display()
+#--------------------------------------------------------------------------------------
+def main(args):
+    global MOVIE_COLLECTION
+
+    load_movie_collection()
+
+    if len(args) == 0:
+        print("no args provided...")
+        exit()
+
+    if args[0] == "scrape":
+        scrape()
+    elif args[0] == "display":
+        display_movie_collection()
+    elif args[0] == "sort":
+        sub_args = args[1:]
+        if len(sub_args) == 0:
+            print("insufficient arguments...")
+            exit()
+        else:
+            pass
+
+        print("Invalid args provided...")
+        exit()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
