@@ -71,8 +71,6 @@ def display():
 #--------------------------------------------------------------------------------------
 
 
-
-
 def main(args):
     global MOVIES_LIST,HEADERS,MAIN_URL
     pages = [str(i) for i in range(1,5)]
@@ -84,12 +82,12 @@ def main(args):
             response = get(MAIN_URL + year_url + "&sort=num_votes,desc&page=" + page, headers=HEADERS)
 
             #pause the loop to avoid getting the IP banned
-            sleep(randint(8,15))
+            #sleep(1)
 
             requests += 1
             elapsed_time = time() - start_time
-            print("request:{}; frequency:{} req/s".format(requests, requests/elapsed_time))
-            clear_output(wait = True)
+            sys.stdout.write("request: %d; frequency: %2.8f req/s\r" % (requests, requests/elapsed_time))
+            #clear_output(wait = True)
 
             # warning for non-200 status codes
             if response.status_code != 200:
@@ -107,7 +105,6 @@ def main(args):
             # terminate loop if #requests > expected
 
     
-
             if len(movie_containers) > 0:
                 for movie_container in movie_containers:
                     name = movie_container.h3.a.text
@@ -117,7 +114,7 @@ def main(args):
                     votes,gross = get_votes_and_gross(movie_container)
                     MOVIES_LIST.append({"name":name,"year":year,"metascore":metascore,"rating":rating,"votes":votes,"gross":gross})
                 
-    print("scraping completed....")
+    sys.stdout.write("\nscraping completed....\n")
     display()       
 
 if __name__ == "__main__":
