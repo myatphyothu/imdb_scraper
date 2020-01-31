@@ -56,19 +56,52 @@ class MovieCollection(object):
         
 
     def __sorted_collection(self, key, mode="AESC", value=None):
+        def interpret_value(ivalue):
+            sign_list = ["greater than equal to", "less than equal to", "less than", "greater than"]
+            sign, final_value = None, None
+            for xsign in sign_list:
+                if ivalue.startswith(xsign):
+                    final_value = ivalue.split(xsign)[1].strip()
+                    sign = xsign
+                    break
+            if sign == None:
+                final_value = ivalue
+            return sign, final_value
+                
+
         if key not in self.particular_collections:    
             return None
 
         if mode != "AESC" and mode != "DESC":
             return None
 
+
         sorted_collection = dict()
         keys = self.particular_collections[key].keys()
         sorted_keys = natsorted(keys, reverse=(True if mode is "DESC" else False))
+        sign, final_value = None, None
+    
         for xkey in sorted_keys:
             if value is not None:
-                if xkey == value:
-                    sorted_collection[xkey] = self.particular_collections[key][xkey]
+                sign, final_value = interpret_value(value)
+                if sign is not None:
+                    if sign == "greater than equal to":
+                        if float(xkey) >= float(final_value):
+                            
+                            sorted_collection[xkey] = self.particular_collections[key][xkey]
+                    elif sign == "less than equal to":
+                        if float(xkey) <= float(final_value):
+                            sorted_collection[xkey] = self.particular_collections[key][xkey]
+                    elif sign == "less than":
+                        if float(xkey) < float(final_value):
+                            sorted_collection[xkey] = self.particular_collections[key][xkey]
+                    elif sign == "greater than":
+                        if float(xkey) > float(final_value):
+                            sorted_collection[xkey] = self.particular_collections[key][xkey]
+                else:
+
+                    if xkey == value:
+                        sorted_collection[xkey] = self.particular_collections[key][xkey]
             else:
                 sorted_collection[xkey] = self.particular_collections[key][xkey]
         return sorted_collection

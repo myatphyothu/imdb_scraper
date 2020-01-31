@@ -60,10 +60,10 @@ MOVIE_COLLECTION.add_list(TEST_MOVIE_LIST)
 
 class TestMovieCollection(unittest.TestCase):
 
-    def test_sort_by_rating(self):
-        print("================================== Sort By Rating ==================================")
-        MOVIE_COLLECTION.display_sorted(key="rating", mode="DESC")
-        print("^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*")
+    # def test_sort_by_rating(self):
+    #     print("================================== Sort By Rating ==================================")
+    #     MOVIE_COLLECTION.display_sorted(key="rating", mode="DESC")
+    #     print("^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*")
 
     # def test_sort_by_votes(self):
     #     print("=================================== Sort By Votes ==================================")
@@ -84,6 +84,30 @@ class TestMovieCollection(unittest.TestCase):
     #     print("================================== Sort By Year ==================================")
     #     MOVIE_COLLECTION.display_sorted(key="year", mode="DESC")
     #     print("^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*^*")
+
+    def test_interpret_value(self):
+        def interpret_value(ivalue):
+            sign_list = ["<=", ">=", "<", ">"]
+            sign, final_value = None, None
+            for xsign in sign_list:
+                if ivalue.startswith(xsign):
+                    final_value = ivalue.split(xsign)[1].strip()
+                    sign = xsign
+                    break
+            if sign == None:
+                final_value = ivalue
+            return sign, final_value
+        test_list = [
+            ("<=3.5", ("<=", "3.5")),
+            (">=4.85", (">=", "4.85")),
+            ("<7.8", ("<","7.8")),
+            (">9.5", (">", "9.5")),
+            ("7.2", (None,"7.2"))
+        ]
+        for (idata,odata) in test_list:
+            self.assertEqual(interpret_value(idata), odata)
+    
+
 
 if __name__ == "__main__":
     unittest.main()

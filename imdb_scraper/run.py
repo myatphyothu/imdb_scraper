@@ -168,15 +168,15 @@ def sort_by(sub_args):
     sub_args = sub_args.split(" ")
     if len(sub_args) == 1:
         key = sub_args[0].strip()
-    elif len(sub_args) == 2:
-        key, value = sub_args
+    elif len(sub_args) >= 2:
+        key, value = sub_args[0], " ".join(sub_args[1:])
         key = key.strip()
         value = value.strip()
 
+    
     if key not in ATTR_KEYS:
         print("invalid 'sort' attribute", key)
         return
-    
     sorted_collection = MOVIE_COLLECTION.sort_by(key, mode="DESC", value=value)
     MovieCollection.display_sorted(sorted_collection, title="Rating")
 #--------------------------------------------------------------------------------------
